@@ -1,8 +1,8 @@
 use crate::models::api_response::ApiResponse;
-use http::StatusCode;
+use rocket::http::Status;
 
 pub struct ApiResponseBuilder<T> {
-    status: StatusCode,
+    status: Status,
     message: String,
     data: Option<T>,
 }
@@ -10,13 +10,13 @@ pub struct ApiResponseBuilder<T> {
 impl<T> ApiResponseBuilder<T> {
     pub fn new() -> Self {
         ApiResponseBuilder {
-            status: StatusCode::OK,
+            status: Status::Ok,
             message: String::new(),
             data: None,
         }
     }
 
-    pub fn status(mut self, status: StatusCode) -> Self {
+    pub fn status(mut self, status: Status) -> Self {
         self.status = status;
         self
     }
@@ -33,7 +33,7 @@ impl<T> ApiResponseBuilder<T> {
 
     pub fn build(self) -> ApiResponse<T> {
         ApiResponse {
-            status: self.status.as_u16(),
+            status: self.status.code,
             message: self.message,
             data: self.data,
         }

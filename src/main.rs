@@ -2,29 +2,25 @@
 extern crate rocket;
 
 mod lib;
+mod models;
 mod routes;
 mod schema;
-mod models;
 
-use diesel::RunQueryDsl;
-use http::StatusCode;
-use rocket::http::Status;
-use rocket::serde::json::{json, Json, Value};
-use rocket_sync_db_pools::{database, diesel};
 use crate::lib::builders::api_response::ApiResponseBuilder;
 use crate::models::api_response::ApiResponse;
 use crate::models::user::{NewUser, User};
+use diesel::RunQueryDsl;
+use rocket::http::Status;
+use rocket::serde::json::Json;
+use rocket_sync_db_pools::{database, diesel};
 
 #[database("db_url")]
 pub struct DbConn(diesel::PgConnection);
 
-#[get("/")]
-async fn index(conn: DbConn) -> Json<ApiResponse<User>>{
-    let json =json!({
-        "status": 200,
-        "message": "Welcome to the Rocket API",
-    });
+// TODO: Migrate to seaql orm
 
+#[get("/")]
+async fn index(conn: DbConn) -> Json<ApiResponse<User>> {
     let user = NewUser {
         username: "admin".to_string(),
         email: "admin@localhost".to_string(),
@@ -41,7 +37,7 @@ async fn index(conn: DbConn) -> Json<ApiResponse<User>>{
         .expect("Error saving new user");
 
     let response = ApiResponseBuilder::new()
-        .status(StatusCode::CREATED)
+        .status(Status::Created)
         .data(inserted_user)
         .build();
 
