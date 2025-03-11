@@ -1,0 +1,2 @@
+[global.databases]
+db_url = { url = "postgres://postgres@localhost:5432/rust-rocket" }

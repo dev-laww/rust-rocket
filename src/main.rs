@@ -19,5 +19,14 @@ fn index() -> Json<Value>{
 
 #[launch]
 fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+    dotenvy::dotenv().expect("Failed to read .env file");
+
+    let config = rocket::Config::figment().merge((
+        "databases.db_url.url",
+        std::env::var("DATABASE_URL").unwrap(),
+    ));
+
+    rocket::custom(config)
+        .attach(DbConn::fairing())
+        .mount("/", routes![index])
 }
