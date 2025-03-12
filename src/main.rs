@@ -8,30 +8,49 @@ mod setup;
 
 use crate::lib::builders::api_response::ApiResponseBuilder;
 use crate::models::api_response::ApiResponse;
-use diesel::RunQueryDsl;
 use models::{prelude::*, *};
 use rocket::State;
 use rocket::http::Status;
 use rocket::serde::json::serde_json::json;
 use rocket::serde::json::{Json, Value};
-use rocket_sync_db_pools::{database, diesel};
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{ActiveValue, DatabaseConnection, EntityTrait};
 
 #[get("/")]
 async fn index(db: &State<DatabaseConnection>) -> Json<ApiResponse<Value>> {
     let db = db as &DatabaseConnection;
 
-    let bakery_names = User::find()
-        .all(db)
-        .await
-        .unwrap()
-        .into_iter()
-        .map(|user| user.first_name)
-        .collect::<Vec<_>>();
+    let user = user::ActiveModel {
+        first_name: ActiveValue::Set("John".to_owned()),
+        middle_name: ActiveValue::Set("Doe".to_owned()),
+        last_name: ActiveValue::Set("Smith".to_owned()),
+        email: ActiveValue::Set("@example.com".to_owned()),
+        password: ActiveValue::Set("password".to_owned()),
+        ..Default::default()
+    };
+
+    let insert_result = User::insert(user).exec(db).await;
+
+    let inserted_user = match User::find_by_id(insert_result.unwrap().last_insert_id).one(db).await {
+        Ok(Some(user)) => user,
+        Ok(None) => {
+            let response = ApiResponseBuilder::new()
+                .status(Status::NotFound)
+                .message("User not found")
+                .build();
+            return Json(response);
+        },
+        Err(err) => {
+            let response = ApiResponseBuilder::new()
+                .status(Status::InternalServerError)
+                .message(&*err.to_string())
+                .build();
+            return Json(response);
+        }
+    };
 
     let response = ApiResponseBuilder::new()
         .status(Status::Created)
-        .data(json!(bakery_names))
+        .data(json!(inserted_user))
         .build();
 
     Json(response)
